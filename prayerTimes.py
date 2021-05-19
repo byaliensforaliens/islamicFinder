@@ -2,6 +2,10 @@ import requests
 import time
 from bs4 import BeautifulSoup
 import pandas as pd
+from email.mime.text import MIMEText
+from email.header import Header
+import smtplib
+import pprint
 
 url = "http://www.salahadeenmosque.org.uk/"
 
@@ -29,4 +33,29 @@ df = pd.DataFrame({"Prayer":p_n,
                     "Start":p_s,
                     "Iqama":i_s})
 
-print(df)
+db = df.set_index("Prayer").to_dict()
+start = db["Start"]
+iqama = db["Iqama"]
+
+corpus = " " + "\n".join("{} {}".format(k, v) for k, v in start.items())
+
+user='noureldin@live.co.uk'
+pwd=open("pwd.txt","r").read().strip()
+server = smtplib.SMTP('smtp.office365.com', 587)
+server.ehlo()
+server.starttls()
+server.login(user, pwd)
+subject = 'Prayer Times'
+family = ['abnoureldin@gmail.com',"wnoureldin@gmail.com"]
+
+msg = MIMEText(corpus, 'plain', 'utf-8')
+msg['From'] = user
+msg['To'] = ', '.join(family)
+msg['Subject'] = Header(subject, 'utf-8')
+
+try:
+    server.sendmail(user,family, msg.as_string())
+    print('email sent')
+except:
+    print('error')
+server.quit()
